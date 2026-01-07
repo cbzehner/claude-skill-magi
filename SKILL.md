@@ -13,11 +13,11 @@ Query Gemini, Codex, and Claude as advisors. Synthesize their input. You write a
 **Run all 3 in parallel** (single message):
 
 ```
-# Gemini (via Bash)
+# Gemini (via Bash) - pass prompt as positional argument ONLY, do NOT pipe stdin
 Bash: scripts/ask_gemini.sh "[ADVISOR_PROMPT]"
       run_in_background: true
 
-# Codex (via Bash)
+# Codex (via Bash) - pass prompt as positional argument ONLY, do NOT pipe stdin
 Bash: scripts/ask_codex.sh "[ADVISOR_PROMPT]"
       run_in_background: true
 
@@ -36,6 +36,19 @@ TaskOutput: [claude_task_id]
 ```
 
 **Why this approach?** Claude uses a Task subagent (which IS Claude) - no subprocess needed. Gemini/Codex use their CLIs via Bash. Running `claude -p` as a subprocess would hang due to session contention.
+
+**IMPORTANT: Do NOT pipe stdin to the scripts.** Pass the prompt as a single positional argument only.
+
+```bash
+# CORRECT - positional argument only
+scripts/ask_gemini.sh "Your prompt here"
+
+# WRONG - will fail with "Cannot use both positional prompt and --prompt flag"
+cat file.txt | scripts/ask_gemini.sh "Your prompt here"
+echo "prompt" | scripts/ask_gemini.sh "Your prompt here"
+```
+
+For large prompts, include the content directly in the quoted argument string.
 
 ## Tool Selection
 

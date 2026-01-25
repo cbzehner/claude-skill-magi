@@ -11,7 +11,7 @@ Query AI advisors for multi-perspective counsel.
 
 ## Command Routing
 
-Parse `$ARGUMENTS` to determine mode:
+Parse `$ARGUMENTS` to determine mode. **Do not announce routing decisions**—just execute the appropriate mode silently.
 
 | Pattern | Mode | Action |
 |---------|------|--------|

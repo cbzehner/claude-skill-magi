@@ -59,23 +59,38 @@ Return the advisor's response directly.
 
 ## Full Counsel Mode
 
-Run all 3 in parallel (single message with multiple tool calls):
+Run as a **single background Task** that queries all advisors and returns the complete synthesis:
 
 ```
-Bash: gemini "[prompt]" --sandbox -o text
-      run_in_background: true
-
-Bash: codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
-      run_in_background: true
-
 Task:
   subagent_type: "general-purpose"
   model: "opus"
-  prompt: "You are a senior software architect advisor. [prompt]"
   run_in_background: true
+  prompt: |
+    You are orchestrating a magi counsel session. Query all three advisors and synthesize their responses.
+
+    **User's question**: [prompt]
+
+    **Instructions**:
+    1. Run these two Bash commands in parallel:
+       - gemini "[prompt]" --sandbox -o text
+       - codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
+    2. Also consider the question yourself as the Claude advisor (senior software architect perspective)
+    3. Wait for ALL results before proceeding
+    4. Synthesize per the patterns below, then return the complete synthesis
+
+    **Synthesis format**:
+    - Quick Answer: 1-2 sentence recommendation
+    - Advisor Summary: Table of each advisor's key insight
+    - Consensus/Conflicts: What they agreed or disagreed on
+    - Synthesized recommendation: Your combined analysis
+
+    **Error handling**:
+    - If Gemini/Codex fails, note it and synthesize with available responses
+    - If auth error, mention the fix (gemini --login or codex login)
 ```
 
-Collect results with `TaskOutput`, then synthesize per [synthesis-guide.md](synthesis-guide.md).
+This ensures the main thread only receives the complete synthesis, not partial results.
 
 ## Handling Failures
 

@@ -85,17 +85,21 @@ The skill also triggers automatically when you mention:
 
 ## How It Works
 
+Full counsel mode runs as a single background Task that queries all advisors:
+
 ```
 Orchestrator (Claude Code)
      |
-     +-- Bash --> gemini CLI --> Google API
-     |
-     +-- Bash --> codex CLI --> OpenAI API
-     |
-     +-- Task (opus) --> Claude subagent --> (direct response)
+     +-- Task (background) --> Magi Executor
+                                    |
+                                    +-- Bash --> gemini CLI
+                                    +-- Bash --> codex CLI
+                                    +-- (Claude reasoning)
+                                    |
+                                    +-- Synthesize --> Complete result
 ```
 
-The Claude advisor uses a Task subagent instead of CLI to avoid session contention. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+This ensures you receive the complete synthesis, not partial results. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## Advisor Strengths
 

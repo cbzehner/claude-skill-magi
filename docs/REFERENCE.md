@@ -12,14 +12,14 @@ Complete reference for tool capabilities, prompt templates, synthesis patterns, 
 
 ## Tool Capabilities
 
-### Hybrid Approach
+### Execution Methods
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
 
 | Advisor | Method | Why |
 |---------|--------|-----|
-| Gemini | Bash → CLI | Subagents can't run Bash |
-| Codex | Bash → CLI | Subagents can't run Bash |
+| Gemini | Bash → CLI | External CLI tool |
+| Codex | Bash → CLI | External CLI tool |
 | Claude | Task subagent (opus) | IS Claude, no subprocess needed |
 
 ### Gemini CLI

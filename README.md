@@ -28,11 +28,6 @@ npm install -g @openai/codex
 codex login
 ```
 
-Verify installation:
-```bash
-~/.claude/skills/magi/scripts/check_prereqs.sh
-```
-
 ## Installation
 
 ### From Marketplace
@@ -56,15 +51,19 @@ git clone https://github.com/cbzehner/claude-skill-magi.git magi
 
 ## Usage
 
-The skill triggers automatically when you mention:
-- "plan", "debug", "research"
-- "alternative perspective"
-- "ask Gemini", "ask Codex", "ask Claude"
+### Command Routing
+
+```
+/magi "prompt"           # Query all three advisors + synthesis
+/magi gemini "prompt"    # Query Gemini only
+/magi codex "prompt"     # Query Codex only
+/magi claude "prompt"    # Query Claude only
+```
 
 ### Example
 
 ```
-You: Help me plan how to implement authentication for my app
+You: /magi "How should we implement authentication for my app?"
 
 Claude: [Queries all 3 advisors in parallel, synthesizes responses]
 
@@ -79,14 +78,19 @@ Recommended approach: Use passport.js with JWT stored in httpOnly
 cookies. Implement Google OAuth first, add GitHub later...
 ```
 
+The skill also triggers automatically when you mention:
+- "plan", "debug", "research"
+- "alternative perspective"
+- "ask Gemini", "ask Codex", "ask Claude"
+
 ## How It Works
 
 ```
 Orchestrator (Claude Code)
      |
-     +-- Bash --> ask_gemini.sh --> Gemini CLI --> Google API
+     +-- Bash --> gemini CLI --> Google API
      |
-     +-- Bash --> ask_codex.sh --> Codex CLI --> OpenAI API
+     +-- Bash --> codex CLI --> OpenAI API
      |
      +-- Task (opus) --> Claude subagent --> (direct response)
 ```
@@ -106,15 +110,15 @@ The Claude advisor uses a Task subagent instead of CLI to avoid session contenti
 ```
 magi/
 ├── SKILL.md              # Main skill definition
+├── reference.md          # Advisor capabilities (loaded on demand)
+├── synthesis-guide.md    # Synthesis patterns (loaded on demand)
 ├── README.md             # This file
 ├── LICENSE               # MIT
-├── scripts/
-│   ├── ask_gemini.sh     # Gemini CLI wrapper
-│   ├── ask_codex.sh      # Codex CLI wrapper
-│   └── check_prereqs.sh  # Verify CLIs installed
 ├── docs/
-│   ├── ARCHITECTURE.md   # Why hybrid approach
-│   └── REFERENCE.md      # Templates, patterns, handling
+│   ├── ARCHITECTURE.md   # Technical design
+│   ├── DEVELOPMENT.md    # Local development guide
+│   ├── REFERENCE.md      # Detailed reference
+│   └── SKILL_GUIDE.md    # Guide to building skills
 └── examples/
     ├── planning.md       # Feature planning example
     ├── debugging.md      # Error debugging example
@@ -125,7 +129,7 @@ magi/
 
 **Data sent**: Your prompts are sent to Google (Gemini), OpenAI (Codex), and Anthropic (Claude) APIs.
 
-**Cost**: Each query invokes 3 AI models. Monitor your API usage accordingly.
+**Cost**: Each full counsel query invokes 3 AI models. Monitor your API usage accordingly. Use single advisor mode (`/magi gemini "prompt"`) when you only need one perspective.
 
 ## License
 

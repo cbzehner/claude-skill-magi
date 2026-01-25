@@ -1,154 +1,119 @@
 ---
 name: magi
-description: Queries Gemini CLI, Codex CLI, and Claude Code as research advisors, synthesizes responses into unified recommendations. Use when planning features, debugging errors, researching APIs, or wanting alternative perspectives. Triggers on "magi", "plan", "debug", "research", "alternative perspective", "ask Gemini", "ask Codex", "ask Claude".
-allowed-tools: Bash, Read, Glob, Grep, Write, Edit, Task
+description: Multi-AI counsel system. Query Gemini, Codex, Claude advisors independently (/magi gemini "prompt") or together (/magi "prompt") with synthesis. Use when planning features, debugging errors, researching APIs, finalizing plans, reviewing code, or wanting alternative perspectives.
+allowed-tools: Bash, Read, Glob, Grep, Task
+# Note: Write/Edit intentionally excluded - magi is advisory only
 ---
 
 # Magi
 
-Query Gemini, Codex, and Claude as advisors. Synthesize their input. You write all code.
+Query AI advisors for multi-perspective counsel.
 
-## How to Query Advisors
+## Command Routing
 
-**Run all 3 in parallel** (single message):
+Parse `$ARGUMENTS` to determine mode:
 
+| Pattern | Mode | Action |
+|---------|------|--------|
+| `gemini "prompt"` | Single | Query Gemini only |
+| `codex "prompt"` | Single | Query Codex only |
+| `claude "prompt"` | Single | Query Claude only |
+| `"prompt"` (no prefix) | Full | All three + synthesis |
+| (empty) | Help | Show usage examples |
+
+### Routing Rules
+
+1. Extract first whitespace-delimited token from `$ARGUMENTS`
+2. If token exactly matches `gemini`, `codex`, or `claude` (case-insensitive):
+   - Route to single advisor mode
+   - Remaining text is the prompt
+3. If no match: Full counsel mode, entire `$ARGUMENTS` is the prompt
+4. If empty: Show usage examples
+
+**Examples**:
+- `/magi gemini "test"` → Single (Gemini)
+- `/magi "use gemini for this"` → Full (first token is "use", no match)
+- `/magi Gemini "test"` → Single (case-insensitive match)
+
+## Single Advisor Mode
+
+### Gemini
 ```
-# Gemini (via Bash) - pass prompt as positional argument ONLY, do NOT pipe stdin
-Bash: scripts/ask_gemini.sh "[ADVISOR_PROMPT]"
-      run_in_background: true
+Bash: gemini "[prompt]" --sandbox -o text
+```
 
-# Codex (via Bash) - pass prompt as positional argument ONLY, do NOT pipe stdin
-Bash: scripts/ask_codex.sh "[ADVISOR_PROMPT]"
-      run_in_background: true
+### Codex
+```
+Bash: codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
+```
 
-# Claude (via Task subagent - no CLI needed!)
+### Claude
+```
 Task:
   subagent_type: "general-purpose"
   model: "opus"
-  prompt: "You are a senior software architect advisor. [ADVISOR_PROMPT]
-           Provide: 1) Approach 2) Steps 3) Risks 4) Alternatives"
+  prompt: "You are a senior software architect advisor. [prompt]"
+```
+
+Return the advisor's response directly.
+
+## Full Counsel Mode
+
+Run all 3 in parallel (single message with multiple tool calls):
+
+```
+Bash: gemini "[prompt]" --sandbox -o text
+      run_in_background: true
+
+Bash: codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
+      run_in_background: true
+
+Task:
+  subagent_type: "general-purpose"
+  model: "opus"
+  prompt: "You are a senior software architect advisor. [prompt]"
   run_in_background: true
-
-# Then collect results
-TaskOutput: [gemini_task_id]
-TaskOutput: [codex_task_id]
-TaskOutput: [claude_task_id]
 ```
 
-**Why this approach?** Claude uses a Task subagent (which IS Claude) - no subprocess needed. Gemini/Codex use their CLIs via Bash. Running `claude -p` as a subprocess would hang due to session contention.
+Collect results with `TaskOutput`, then synthesize per [synthesis-guide.md](synthesis-guide.md).
 
-**IMPORTANT: Do NOT pipe stdin to the scripts.** Pass the prompt as a single positional argument only.
+## Handling Failures
 
-```bash
-# CORRECT - positional argument only
-scripts/ask_gemini.sh "Your prompt here"
+Claude (Task subagent) always succeeds - it's internal.
+Gemini and Codex (external CLIs) may fail.
 
-# WRONG - will fail with "Cannot use both positional prompt and --prompt flag"
-cat file.txt | scripts/ask_gemini.sh "Your prompt here"
-echo "prompt" | scripts/ask_gemini.sh "Your prompt here"
-```
+| Available | Action |
+|-----------|--------|
+| 3/3 | Full synthesis |
+| 2/3 | Partial synthesis, note which advisor was unavailable |
+| 1/3 (Claude only) | Return Claude's response with note: "External advisors unavailable. This is Claude's analysis only. Want me to retry Gemini/Codex?" |
 
-For large prompts, include the content directly in the quoted argument string.
+### Error Handling
 
-## Tool Selection
+- If command fails with network error, retry once
+- If auth error (mentions "login" or "credentials"), suggest: `gemini --login` or `codex login`
+- If CLI not found, explain how to install (see [reference.md](reference.md))
+- Don't retry auth failures
 
-| Task | Best Advisor | Why |
-|------|--------------|-----|
-| Web/API docs | Gemini | google_web_search |
-| Current info | Gemini | Web access |
-| Fast analysis | Codex | Speed |
-| Large context | Gemini | 1M tokens |
-| Deep reasoning | Claude | Opus model |
-| Code review | Claude | Code expertise |
-| Architecture | Claude | Reasoning depth |
+## Usage Examples
 
-## Planning Workflow
+When `$ARGUMENTS` is empty, show:
 
 ```
-Planning Progress:
-- [ ] Query all three advisors with task context
-- [ ] Review responses for agreements/conflicts
-- [ ] Synthesize into unified plan
-- [ ] Present to user with reasoning
-- [ ] Implement (you write the code)
+Usage:
+  /magi "prompt"           # Query all three advisors + synthesis
+  /magi gemini "prompt"    # Query Gemini only
+  /magi codex "prompt"     # Query Codex only
+  /magi claude "prompt"    # Query Claude only
+
+Examples:
+  /magi "How should we implement caching?"
+  /magi gemini "What's the latest on React Server Components?"
+  /magi codex "Review this function for performance issues"
+  /magi claude "Help me design the authentication architecture"
 ```
 
-**Advisor prompt template**:
-```
-Task: [description]
-Context: [codebase context]
-Constraints: [limitations]
+## References
 
-Provide: 1) Approach 2) Steps 3) Risks 4) Alternatives
-```
-
-## Debugging Workflow
-
-```
-Debugging Progress:
-- [ ] Gather error context
-- [ ] Query all three advisors with error + code
-- [ ] Evaluate suggested fixes
-- [ ] Implement fix yourself
-- [ ] Verify solution
-```
-
-**Advisor prompt template**:
-```
-Error: [message]
-Code: [relevant code]
-Context: [what was attempted]
-
-Provide: 1) Likely cause 2) Investigation steps 3) Fix 4) Prevention
-```
-
-## Research Workflow
-
-**Advisor prompt template**:
-```
-Topic: [question]
-Context: [why needed]
-
-Provide: 1) Key findings 2) Sources 3) Applicability 4) Caveats
-```
-
-## Synthesis Patterns
-
-When combining advisor responses:
-
-| Pattern | When | Action |
-|---------|------|--------|
-| **Consensus** | All agree | Proceed with confidence |
-| **Complementary** | Different but compatible | Combine insights |
-| **Conflict** | Direct contradiction | Evaluate evidence, decide |
-| **Gap** | One silent | Query specifically or use own knowledge |
-
-**Synthesis format**:
-```
-Gemini: [key points]
-Codex: [key points]
-Claude: [key points]
-Synthesis: [recommendation]
-Reasoning: [why, noting agreements/conflicts]
-```
-
-## Handling Disagreements
-
-When advisors conflict:
-
-1. **Categorize**: Factual (verify docs), Architectural (consider constraints), Stylistic (follow project), Risk (evaluate evidence)
-2. **Evaluate evidence**: Good = specific references, reasoned arguments. Weak = vague claims, false confidence.
-3. **Apply context**: Existing patterns, team expertise, requirements
-4. **Decide**: Prefer simpler, prefer reversible, prefer established
-5. **Communicate**: "Gemini suggested X, Codex suggested Y, Claude suggested Z, I chose W because..."
-
-### Anti-Patterns to Avoid
-
-- **False consensus**: Agreement does not equal correctness
-- **Authority bias**: Preferring one advisor without reason
-- **Analysis paralysis**: Over-deliberating minor decisions
-- **Ignoring context**: Generic advice to specific situation
-
-## Reference
-
-For detailed templates, tool capabilities, and examples see [docs/REFERENCE.md](docs/REFERENCE.md).
+- Advisor capabilities and CLI details: [reference.md](reference.md)
+- Synthesis patterns and report template: [synthesis-guide.md](synthesis-guide.md)

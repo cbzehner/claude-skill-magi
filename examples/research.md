@@ -9,15 +9,15 @@
 For research, Gemini's web search is most valuable:
 
 ```bash
-scripts/ask_gemini.sh "Topic: Node.js PDF generation libraries 2025
+gemini "Topic: Node.js PDF generation libraries 2025
 Context: Generating invoices and reports, need tables and styling
-Provide: 1) Key findings 2) Sources 3) Applicability 4) Caveats"
+Provide: 1) Key findings 2) Sources 3) Applicability 4) Caveats" --sandbox -o text
 ```
 
 Optionally query others for implementation patterns:
 
 ```bash
-scripts/ask_codex.sh "Topic: Node.js PDF generation for invoices
+codex exec --sandbox read-only --skip-git-repo-check -- "Topic: Node.js PDF generation for invoices
 Context: Need tables, headers, footers, styling
 Provide: 1) Key findings 2) Sources 3) Applicability 4) Caveats"
 ```

@@ -7,14 +7,17 @@
 ## Query All Advisors
 
 ```bash
-# Run in parallel
-scripts/ask_gemini.sh "Task: Add JWT auth to Express API
-Context: Express backend, PostgreSQL, no existing auth
-Provide: 1) Approach 2) Steps 3) Risks 4) Alternatives" &
+# Run in parallel (all in one message with run_in_background: true)
 
-scripts/ask_codex.sh "Task: Add JWT auth to Express API
+# Gemini
+gemini "Task: Add JWT auth to Express API
 Context: Express backend, PostgreSQL, no existing auth
-Provide: 1) Approach 2) Steps 3) Risks 4) Alternatives" &
+Provide: 1) Approach 2) Steps 3) Risks 4) Alternatives" --sandbox -o text
+
+# Codex
+codex exec --sandbox read-only --skip-git-repo-check -- "Task: Add JWT auth to Express API
+Context: Express backend, PostgreSQL, no existing auth
+Provide: 1) Approach 2) Steps 3) Risks 4) Alternatives"
 
 # Claude via Task subagent
 Task:

@@ -7,14 +7,17 @@
 ## Query All Advisors
 
 ```bash
-# Run in parallel
-scripts/ask_gemini.sh "Error: Function returns undefined
-Code: const data = response.json(); return data;
-Provide: 1) Cause 2) Investigation 3) Fix 4) Prevention" &
+# Run in parallel (all in one message with run_in_background: true)
 
-scripts/ask_codex.sh "Error: Function returns undefined
+# Gemini
+gemini "Error: Function returns undefined
 Code: const data = response.json(); return data;
-Provide: 1) Cause 2) Investigation 3) Fix 4) Prevention" &
+Provide: 1) Cause 2) Investigation 3) Fix 4) Prevention" --sandbox -o text
+
+# Codex
+codex exec --sandbox read-only --skip-git-repo-check -- "Error: Function returns undefined
+Code: const data = response.json(); return data;
+Provide: 1) Cause 2) Investigation 3) Fix 4) Prevention"
 
 # Claude via Task subagent
 Task:

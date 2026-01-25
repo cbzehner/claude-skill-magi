@@ -27,8 +27,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md) for full details.
 **Strengths**: Web search (`google_web_search`), 1M token context, `codebase_investigator`
 
 ```bash
-scripts/ask_gemini.sh "[prompt]"              # Via wrapper script
-gemini "[prompt]" --sandbox -o text 2>&1      # Direct CLI
+gemini "[prompt]" --sandbox -o text
 ```
 
 | Flag | Purpose |
@@ -44,8 +43,7 @@ gemini "[prompt]" --sandbox -o text 2>&1      # Direct CLI
 **Strengths**: Fast (Rust), fine-grained security, multi-provider
 
 ```bash
-scripts/ask_codex.sh "[prompt]"                                    # Via wrapper script
-codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]" # Direct CLI
+codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
 ```
 
 | Flag | Purpose |
@@ -59,7 +57,7 @@ codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]" # Direct CLI
 
 **Strengths**: Deep reasoning (Opus model), code expertise, codebase awareness
 
-**Method**: Task subagent with `model: "opus"`. The subagent IS Claude - responds directly without spawning a process or calling an API.
+**Method**: Task subagent with `model: "opus"`. The subagent IS Claude—it responds directly without spawning a process or calling an API.
 
 ```
 Task:
@@ -87,16 +85,7 @@ Task:
 
 ### Error Handling
 
-Errors from CLI scripts display with clear banners:
-
-```
-================================================
-           [ADVISOR] ADVISOR ERROR
-================================================
-Error: [description]
-Fix: [suggested fix]
-================================================
-```
+If a CLI fails, Claude interprets the error and responds appropriately:
 
 | Issue | Fix |
 |-------|-----|

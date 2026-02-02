@@ -42,25 +42,6 @@ Full counsel runs as a **single background Task** that handles all advisor queri
 
 The single-Task approach ensures the main thread only receives the complete synthesis, not partial results.
 
-## Single Advisor Mode
-
-Single advisor queries run directly from the orchestrator:
-
-```
-ORCHESTRATOR ──► Bash: gemini "..." ──► Response
-ORCHESTRATOR ──► Bash: codex "..."  ──► Response
-ORCHESTRATOR ──► Task: Claude       ──► Response
-```
-
-## Command Routing
-
-| Command | Mode | Execution |
-|---------|------|-----------|
-| `/magi "prompt"` | Full counsel | Single background Task |
-| `/magi gemini "prompt"` | Single | Direct Bash |
-| `/magi codex "prompt"` | Single | Direct Bash |
-| `/magi claude "prompt"` | Single | Direct Task |
-
 ## Why Task Subagent for Claude?
 
 Running `claude -p` as a subprocess causes session contention and hangs. Task subagents avoid this—the subagent IS Claude, no subprocess needed.

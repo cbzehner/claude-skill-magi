@@ -130,8 +130,8 @@ description: A helpful skill for various tasks.
 
 ```yaml
 # Good: Shows how to use it
-description: Multi-AI counsel system. Query advisors independently
-  (/magi gemini "prompt") or together (/magi "prompt") with synthesis.
+description: Multi-AI counsel system. Query Gemini, Codex, Claude
+  advisors together with synthesis. Use /magi "prompt" to invoke.
 
 # Bad: No usage hint
 description: Queries multiple AI advisors.
@@ -150,34 +150,31 @@ Think about how users will ask for help:
 
 If your skill has multiple modes, define explicit routing rules.
 
-### First-Token Matching
+### Simple Routing
+
+For skills with a single mode, keep it simple:
+
+```markdown
+## Usage
+
+If ARGUMENTS is empty, show usage examples. Otherwise, execute with the prompt.
+```
+
+### Multi-Mode Routing
+
+For skills with multiple modes, use first-token matching:
 
 ```markdown
 ## Command Routing
 
 Parse ARGUMENTS:
 1. Extract first whitespace-delimited token
-2. If token matches `gemini|codex|claude` (case-insensitive):
-   - Single advisor mode
-   - Remaining text is the prompt
-3. Otherwise: Full mode, entire ARGUMENTS is prompt
+2. If token matches a known mode (case-insensitive), route there
+3. Otherwise: Default mode, entire ARGUMENTS is the prompt
 4. If empty: Show usage examples
 ```
 
-### Include Examples and Non-Examples
-
-```markdown
-## Routing Examples
-
-| Input | Routes To | Why |
-|-------|-----------|-----|
-| `/magi gemini "test"` | Single (Gemini) | First token matches |
-| `/magi "use gemini for this"` | Full (all three) | First token is "use", no match |
-| `/magi Gemini "test"` | Single (Gemini) | Case-insensitive match |
-| `/magi` | Help | Empty arguments |
-```
-
-This prevents ambiguity and helps Claude route correctly.
+Include examples to prevent ambiguity.
 
 ---
 

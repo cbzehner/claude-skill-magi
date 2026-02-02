@@ -57,23 +57,10 @@ Start a new Claude Code session or use `/clear` to reset context. This ensures t
 
 ### Manual Validation Checklist
 
-Test each routing mode:
-
 | Command | Expected Behavior |
 |---------|-------------------|
 | `/magi` | Shows usage examples |
-| `/magi gemini "What is 2+2?"` | Queries Gemini only |
-| `/magi codex "What is 2+2?"` | Queries Codex only |
-| `/magi claude "What is 2+2?"` | Queries Claude only |
-| `/magi "What is 2+2?"` | Queries all three + synthesis |
-
-### Edge Cases
-
-| Command | Expected Behavior |
-|---------|-------------------|
-| `/magi "should I use gemini?"` | Full mode (not Gemini) - first token is "should" |
-| `/magi Gemini "test"` | Single Gemini (case-insensitive) |
-| `/magi CODEX "test"` | Single Codex (case-insensitive) |
+| `/magi "What is 2+2?"` | Queries all three advisors + synthesis |
 
 ### Error Handling
 
@@ -81,7 +68,7 @@ Test graceful degradation:
 
 1. **Missing CLI**: Uninstall gemini temporarily, run `/magi "test"`. Should explain how to install.
 2. **Auth expired**: Run with expired credentials. Should suggest `gemini --login` or `codex login`.
-3. **Network error**: Disconnect network, run `/magi gemini "test"`. Should retry once.
+3. **Gemini 429**: If Gemini capacity is exceeded, should retry with flash model.
 
 ## File Structure
 
@@ -130,11 +117,6 @@ Keep `SKILL.md` lean (~100 lines). Move detailed reference material to separate 
 1. Check symlink: `ls -la ~/.claude/skills/magi`
 2. Verify SKILL.md frontmatter is valid YAML
 3. Start fresh session (`/clear` or new terminal)
-
-### Wrong Routing
-
-1. Check first-token matching logic in SKILL.md
-2. Test with explicit quotes: `/magi gemini "prompt"` vs `/magi "gemini prompt"`
 
 ### CLI Errors
 

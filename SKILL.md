@@ -1,6 +1,6 @@
 ---
 name: magi
-description: Multi-AI counsel system. Query Gemini, Codex, Claude advisors independently (/magi gemini "prompt") or together (/magi "prompt") with synthesis. Use when planning features, debugging errors, researching APIs, finalizing plans, reviewing code, or wanting alternative perspectives.
+description: Multi-AI counsel system. Query Gemini, Codex, Claude advisors together with synthesis. Use when planning features, debugging errors, researching APIs, finalizing plans, reviewing code, or wanting alternative perspectives.
 allowed-tools: Bash, Read, Glob, Grep, Task
 # Note: Write/Edit intentionally excluded - magi is advisory only
 ---
@@ -9,60 +9,11 @@ allowed-tools: Bash, Read, Glob, Grep, Task
 
 Query AI advisors for multi-perspective counsel.
 
-## Command Routing
+## Usage
 
-Parse `$ARGUMENTS` to determine mode. **Do not announce routing decisions**—just execute the appropriate mode silently.
+If `$ARGUMENTS` is empty, show usage examples. Otherwise, query all three advisors with the prompt.
 
-| Pattern | Mode | Action |
-|---------|------|--------|
-| `gemini "prompt"` | Single | Query Gemini only |
-| `codex "prompt"` | Single | Query Codex only |
-| `claude "prompt"` | Single | Query Claude only |
-| `"prompt"` (no prefix) | Full | All three + synthesis |
-| (empty) | Help | Show usage examples |
-
-### Routing Rules
-
-1. Extract first whitespace-delimited token from `$ARGUMENTS`
-2. If token exactly matches `gemini`, `codex`, or `claude` (case-insensitive):
-   - Route to single advisor mode
-   - Remaining text is the prompt
-3. If no match: Full counsel mode, entire `$ARGUMENTS` is the prompt
-4. If empty: Show usage examples
-
-**Examples**:
-- `/magi gemini "test"` → Single (Gemini)
-- `/magi "use gemini for this"` → Full (first token is "use", no match)
-- `/magi Gemini "test"` → Single (case-insensitive match)
-
-## Single Advisor Mode
-
-### Gemini
-```
-Bash: gemini "[prompt]" --model gemini-3-pro-preview --sandbox -o text
-```
-
-If quota exhausted (429 error), fallback to:
-```
-Bash: gemini "[prompt]" --model gemini-3-flash-preview --sandbox -o text
-```
-
-### Codex
-```
-Bash: codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
-```
-
-### Claude
-```
-Task:
-  subagent_type: "general-purpose"
-  model: "opus"
-  prompt: "You are a senior software architect advisor. [prompt]"
-```
-
-Return the advisor's response directly.
-
-## Full Counsel Mode
+## Querying Advisors
 
 Run as a **single background Task** that queries all advisors and returns the complete synthesis:
 
@@ -72,7 +23,7 @@ Task:
   model: "opus"
   run_in_background: true
   prompt: |
-    You are orchestrating a magi counsel session. Query all three advisors and synthesize their responses.
+    You are orchestrating a magi counsel session.
 
     **User's question**: [prompt]
 
@@ -80,22 +31,66 @@ Task:
     1. Run these two Bash commands in parallel:
        - gemini "[prompt]" --model gemini-3-pro-preview --sandbox -o text
        - codex exec --sandbox read-only --skip-git-repo-check -- "[prompt]"
-    2. Also consider the question yourself as the Claude advisor (senior software architect perspective)
+    2. Also formulate your own response as the Claude advisor
     3. Wait for ALL results before proceeding
-    4. Synthesize per the patterns below, then return the complete synthesis
+    4. If Gemini fails with 429/capacity error:
+       - Wait 60 seconds, retry with gemini-3-pro-preview
+       - If still fails, try gemini-3-flash-preview
+       - If that fails, note "Gemini unavailable" and proceed
+    5. If EITHER command fails with permission denied ("denied by policy"):
+       - STOP immediately
+       - Do NOT proceed with Claude-only synthesis
+       - Return ONLY this setup message:
 
-    **Synthesis format**:
-    - Quick Answer: 1-2 sentence recommendation
-    - Advisor Summary: Table of each advisor's key insight
-    - Consensus/Conflicts: What they agreed or disagreed on
-    - Synthesized recommendation: Your combined analysis
+       ## Magi Setup Required
 
-    **Error handling**:
-    - If Gemini/Codex fails, note it and synthesize with available responses
-    - If auth error, mention the fix (gemini --login or codex login)
+       The magi skill needs permission to run external AI advisors.
+
+       Add these entries to your `.claude/settings.local.json` permissions.allow array:
+       - `"Bash(gemini *)"`
+       - `"Bash(codex *)"`
+
+       Then restart Claude Code and try again.
+
+    **Output format** (use exactly):
+
+    ## Quick Answer
+    [1-2 sentence recommendation]
+
+    <details>
+    <summary>Gemini Response</summary>
+
+    [Full Gemini response or "Unavailable: [reason]"]
+
+    </details>
+
+    <details>
+    <summary>Codex Response</summary>
+
+    [Full Codex response or "Unavailable: [reason]"]
+
+    </details>
+
+    <details>
+    <summary>Claude Response</summary>
+
+    [Your analysis as Claude advisor]
+
+    </details>
+
+    ## Synthesis
+    | Advisor | Key Insight |
+    |---------|-------------|
+    | Gemini | ... |
+    | Codex | ... |
+    | Claude | ... |
+
+    **Consensus**: [What they agreed on]
+    **Conflicts**: [Disagreements and resolution]
+    **Recommendation**: [Your synthesized advice]
 ```
 
-This ensures the main thread only receives the complete synthesis, not partial results.
+This ensures the main thread receives both individual responses (collapsible) and the synthesis.
 
 ## Handling Failures
 
@@ -106,15 +101,28 @@ Gemini and Codex (external CLIs) may fail.
 |-----------|--------|
 | 3/3 | Full synthesis |
 | 2/3 | Partial synthesis, note which advisor was unavailable |
-| 1/3 (Claude only) | Return Claude's response with note: "External advisors unavailable. This is Claude's analysis only. Want me to retry Gemini/Codex?" |
+| 1/3 (Claude only) | Only if failures are capacity/network errors. Return Claude's response with note about unavailable advisors. |
+| Permission denied | **STOP** - do not synthesize, show setup instructions instead |
 
 ### Error Handling
 
-- If command fails with network error, retry once
-- If auth error (mentions "login" or "credentials"), suggest: `gemini --login` or `codex login`
-- If Gemini quota exhausted (429, "quota", "capacity"), retry with `--model gemini-3-flash-preview`
-- If CLI not found, explain how to install (see [reference.md](reference.md))
-- Don't retry auth failures
+| Error Type | Action |
+|------------|--------|
+| Permission denied | **STOP** - show setup instructions below |
+| 429 / capacity | Wait 60s → retry pro → try flash → proceed without if still fails |
+| Auth error | Suggest `gemini --login` or `codex login` |
+| CLI not found | Link to [reference.md](reference.md) for install |
+| Network error | Retry once |
+
+**Permission setup** (show only for permission errors):
+```
+Add these entries to your .claude/settings.local.json permissions.allow array:
+  "Bash(gemini *)"
+  "Bash(codex *)"
+
+Then restart Claude Code.
+```
+Do NOT fall back to Claude-only for permission errors - user must fix setup.
 
 ## Usage Examples
 
@@ -122,16 +130,12 @@ When `$ARGUMENTS` is empty, show:
 
 ```
 Usage:
-  /magi "prompt"           # Query all three advisors + synthesis
-  /magi gemini "prompt"    # Query Gemini only
-  /magi codex "prompt"     # Query Codex only
-  /magi claude "prompt"    # Query Claude only
+  /magi "prompt"    # Query all three advisors + synthesis
 
 Examples:
   /magi "How should we implement caching?"
-  /magi gemini "What's the latest on React Server Components?"
-  /magi codex "Review this function for performance issues"
-  /magi claude "Help me design the authentication architecture"
+  /magi "What's the best approach for authentication?"
+  /magi "Review this architecture for potential issues"
 ```
 
 ## References

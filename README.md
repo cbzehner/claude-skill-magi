@@ -51,13 +51,8 @@ git clone https://github.com/cbzehner/claude-skill-magi.git magi
 
 ## Usage
 
-### Command Routing
-
 ```
-/magi "prompt"           # Query all three advisors + synthesis
-/magi gemini "prompt"    # Query Gemini only
-/magi codex "prompt"     # Query Codex only
-/magi claude "prompt"    # Query Claude only
+/magi "prompt"    # Query all three advisors + synthesis
 ```
 
 ### Example
@@ -133,7 +128,7 @@ magi/
 
 **Data sent**: Your prompts are sent to Google (Gemini), OpenAI (Codex), and Anthropic (Claude) APIs.
 
-**Cost**: Each full counsel query invokes 3 AI models. Monitor your API usage accordingly. Use single advisor mode (`/magi gemini "prompt"`) when you only need one perspective.
+**Cost**: Each query invokes 3 AI models. Monitor your API usage accordingly. To query just one model, call the CLI directly: `gemini "prompt" --sandbox -o text` or `codex exec --sandbox read-only -- "prompt"`.
 
 ## License
 

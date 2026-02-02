@@ -28,7 +28,7 @@ gemini "[prompt]" --model gemini-3-pro-preview --sandbox -o text
 | `--sandbox` | Read-only mode, no file writes |
 | `-o` | Output format: `text`, `json`, `stream-json` |
 
-**Quota**: Pro has daily limits. If exhausted (429 error), use flash as fallback.
+**Capacity errors**: Pro preview has limited capacity. On 429 error: wait 60s → retry pro → try flash → skip if still fails.
 
 **Install**: `npm install -g @google/gemini-cli && gemini --login`
 
@@ -61,23 +61,6 @@ Task:
 ```
 
 **Why not CLI?** Running `claude -p` as subprocess causes session contention. Task subagents avoid this.
-
----
-
-## Selection Guide
-
-| Task Type | Recommended | Why |
-|-----------|-------------|-----|
-| Web/API docs | Gemini | Web search access |
-| Current info (2024+) | Gemini | Real-time search |
-| Library comparison | Gemini | Can research options |
-| Fast analysis | Codex | Speed |
-| Large codebase context | Gemini | 1M token window |
-| Security review | Codex | Sandboxing focus |
-| CI/CD patterns | Codex | Automation expertise |
-| Deep reasoning | Claude | Opus model capabilities |
-| Code review | Claude | Code expertise |
-| Architecture decisions | Claude | Reasoning depth |
 
 ---
 

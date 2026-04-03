@@ -2,7 +2,8 @@
 name: magi
 description: Multi-AI counsel system. Query Gemini, Codex, Claude advisors in parallel with synthesis. Use for second opinions, plan synthesis, debugging, researching APIs, reviewing code, architecture decisions, or alternative perspectives. Use this whenever the user wants advice, says "what do you think", asks for multiple viewpoints, or would benefit from a second opinion.
 argument-hint: "[prompt or competing plans]"
-allowed-tools: Bash, Read, Glob, Grep, Task, Write
+license: MIT
+allowed-tools: Bash Read Glob Grep Task Write
 # Note: Write is scoped to session persistence (~/.claude/magi/sessions/) only
 ---
 

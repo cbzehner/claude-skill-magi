@@ -12,6 +12,12 @@ allowed-tools: Bash Read Glob Grep Task Write
 
 # Magi
 
+## When NOT to Use
+
+- Trivial questions where you already know the answer — magi adds 30-60s latency
+- Time-sensitive execution where the user wants action, not counsel
+- Solo deep reasoning — use critical-thinking instead
+
 ## Modes
 
 ### Counsel (default)
@@ -48,7 +54,7 @@ External advisors have no project access. Include in priority order:
 4. Project structure (`ls`/tree)
 5. Framework context (package.json, Cargo.toml, etc.)
 
-Never include secrets/credentials. Build one prompt for all advisors.
+Excerpt relevant sections, not whole files. Never include secrets/credentials. Build one prompt for all advisors.
 
 ### Step 2: Query Advisors in Parallel
 
@@ -67,6 +73,10 @@ PROMPT
 1. Queries Gemini and Codex in parallel via Bash (heredocs for prompt safety)
 2. Formulates its own response as the Claude advisor
 3. Waits for ALL results, then normalizes and synthesizes
+4. If Gemini fails with 429/capacity: wait 60s, retry once, then skip
+5. If EITHER command fails with "denied by policy": STOP — return only the setup message (see Failure Handling)
+
+**On Codex:** The current session is the local advisor. Launch Gemini and Claude as external CLIs using heredocs. For Claude JSON output (`claude -p ... --output-format json`), check `is_error` before normalizing.
 
 **Advisor prompt format:** Include the user's question + gathered context. Ask each advisor to state: assumptions, information gaps, implications (especially irreversible), and evidence basis.
 
@@ -156,7 +166,7 @@ Always use `## Synthesis`, `## Claude`, `## Gemini`, `## Codex` headers (grep an
 - 3/3 → full synthesis
 - 2/3 → partial synthesis, note who's missing and why
 - 1/3 (host-only) → only if failures are capacity/network; state it's single-advisor
-- Permission blocked → **STOP**. Show setup message: add `"Bash(gemini *)"` and `"Bash(codex *)"` to `.claude/settings.local.json` permissions.allow
+- Permission blocked → **STOP**. Show setup message: add `"Bash(gemini *)"` and `"Bash(codex *)"` to `.claude/settings.local.json` permissions.allow. (Codex hosts: show sandbox/approval guidance instead.)
 
 ## Usage Examples
 

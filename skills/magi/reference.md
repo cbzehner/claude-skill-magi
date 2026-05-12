@@ -8,25 +8,23 @@ Provider details, normalization schema, and report template.
 
 | Advisor | Model | Unique Capability | Best For |
 |---------|-------|-------------------|----------|
-| Gemini | gemini-3.1-pro-preview | Native web search (`google_web_search`) | Current info, API docs, library research |
+| Gemini | (set in gemini-query.sh) | Native web search (`google_web_search`) | Current info, API docs, library research |
 | Codex | gpt-5.4 | Sandboxed code execution | Verification, CI/CD patterns, security |
 | Claude | Opus 4.6 | Deep reasoning, project context | Architecture, code review, complex problems |
 
 ### Gemini CLI
 
+Always invoke Gemini through [gemini-query.sh](gemini-query.sh):
+
 ```bash
-gemini -p "$(cat <<'PROMPT'
+bash gemini-query.sh "$(cat <<'PROMPT'
 [advisor prompt]
 PROMPT
-)" --model gemini-3.1-pro-preview --sandbox -o json
+)"
 ```
 
-| Flag | Purpose |
-|------|---------|
-| `-p` | Non-interactive mode |
-| `--model` | Model selection |
-| `--sandbox` | Read-only, no file writes |
-| `-o json` | JSON output with `response` (content) and `stats` (metrics) |
+The adapter centralizes model selection and output flags. Never call `gemini -p`
+directly — model names drift in long subagent contexts.
 
 **Metrics from JSON:** Token counts in `stats.models.<model>.tokens` (input,
 candidates, thoughts, total). Latency in `stats.models.<model>.api.totalLatencyMs`.

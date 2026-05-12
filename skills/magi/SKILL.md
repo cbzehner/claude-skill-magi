@@ -1,6 +1,13 @@
 ---
 name: magi
-description: Multi-AI counsel system. Query Gemini, Codex, Claude advisors in parallel with synthesis. Use for second opinions, plan synthesis, debugging, researching APIs, reviewing code, architecture decisions, or alternative perspectives. Use this whenever the user wants advice, says "what do you think", asks for multiple viewpoints, or would benefit from a second opinion.
+description: >-
+  Multi-AI counsel system that queries Gemini, Codex, and Claude advisors in
+  parallel, then synthesizes the answers. Use for second opinions, multiple
+  viewpoints, plan review, architecture decisions, debugging strategy, API
+  research, code review, tradeoff analysis, or alternative perspectives. Trigger
+  when the user asks "what do you think", "ask other models", "get advice",
+  "compare approaches", "review this plan", or would benefit from external
+  model counsel before acting.
 argument-hint: "[prompt or competing plans]"
 arguments:
   - prompt
@@ -58,13 +65,15 @@ Excerpt relevant sections, not whole files. Never include secrets/credentials. B
 
 ### Step 2: Query Advisors in Parallel
 
-**Prompt safety:** Never interpolate prompts into shell strings. Always use single-quoted heredocs (`<<'PROMPT'`) to prevent shell expansion:
+**Prompt safety:** Never interpolate prompts into shell strings. Always use single-quoted heredocs (`<<'PROMPT'`) to prevent shell expansion.
+
+**Gemini transport:** Always use [gemini-query.sh](gemini-query.sh) instead of calling `gemini` directly (centralizes model selection, prevents model-name drift in long contexts):
 
 ```bash
-gemini -p "$(cat <<'PROMPT'
+bash gemini-query.sh "$(cat <<'PROMPT'
 [advisor prompt with any characters safely]
 PROMPT
-)" --model gemini-3.1-pro-preview --sandbox -o json
+)"
 ```
 
 **Codex transport:** Always use [codex-adapter.sh](codex-adapter.sh) instead of `codex exec` directly (prevents stdin pipe hangs in subagent environments).
@@ -166,7 +175,7 @@ Always use `## Synthesis`, `## Claude`, `## Gemini`, `## Codex` headers (grep an
 - 3/3 → full synthesis
 - 2/3 → partial synthesis, note who's missing and why
 - 1/3 (host-only) → only if failures are capacity/network; state it's single-advisor
-- Permission blocked → **STOP**. Show setup message: add `"Bash(gemini *)"` and `"Bash(codex *)"` to `.claude/settings.local.json` permissions.allow. (Codex hosts: show sandbox/approval guidance instead.)
+- Permission blocked → **STOP**. Show setup message: add `"Bash(bash gemini-query.sh *)"` and `"Bash(codex *)"` to `.claude/settings.local.json` permissions.allow. (Codex hosts: show sandbox/approval guidance instead.)
 
 ## Usage Examples
 

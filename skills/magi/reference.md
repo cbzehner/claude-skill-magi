@@ -8,32 +8,35 @@ Provider details, normalization schema, and report template.
 
 | Advisor | Model | Unique Capability | Best For |
 |---------|-------|-------------------|----------|
-| Gemini | (set in gemini-query.sh) | Native web search (`google_web_search`) | Current info, API docs, library research |
+| Gemini | gemini-3.1-pro-preview | Native web search (`google_web_search`) | Current info, API docs, library research |
 | Codex | gpt-5.4 | Sandboxed code execution | Verification, CI/CD patterns, security |
 | Claude | Opus 4.6 | Deep reasoning, project context | Architecture, code review, complex problems |
 
 ### Gemini CLI
 
-Always invoke Gemini through [gemini-query.sh](gemini-query.sh):
+Invoke Gemini directly with an explicit model and JSON output:
 
 ```bash
-bash gemini-query.sh "$(cat <<'PROMPT'
+gemini -p "$(cat <<'PROMPT'
 [advisor prompt]
 PROMPT
-)"
+)" --model gemini-3.1-pro-preview --sandbox -o json
 ```
 
-The adapter centralizes model selection and output flags. Never call `gemini -p`
-directly — model names drift in long subagent contexts.
+Keep the model and output flags in the command rather than hiding them in a local
+wrapper. This avoids wrapper-path drift when panel instructions are copied into
+another skill.
 
 **Metrics from JSON:** Token counts in `stats.models.<model>.tokens` (input,
 candidates, thoughts, total). Latency in `stats.models.<model>.api.totalLatencyMs`.
 
 **Setup:** `npm install -g @google/gemini-cli && gemini --login`
 
-**Non-interactive auth:** `-p` mode doesn't read stored credentials. Create
-`~/.gemini/.env` with `GEMINI_API_KEY=your-key` for subprocess use.
-Get a key from https://aistudio.google.com/app/apikey
+**Non-interactive auth:** `-p` mode expects `GEMINI_API_KEY`. Check
+`~/.gemini/.env` first; this machine keeps the current Gemini API key there.
+If the key is missing, create that file with `GEMINI_API_KEY=your-key`.
+Get a key from https://aistudio.google.com/app/apikey. Never print or persist
+the key in reports.
 
 **Capacity errors:** On 429: wait 60s → retry once → skip.
 

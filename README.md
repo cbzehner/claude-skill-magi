@@ -1,5 +1,9 @@
 # Magi
 
+> **Archived:** Magi has been folded into
+> [skill-counsel](https://github.com/cbzehner/skill-counsel). Use Counsel's
+> `--panel` mode for multi-model council workflows.
+
 Query multiple AI advisors (Gemini, Codex, Claude) in parallel and synthesize their responses into unified recommendations.
 
 > *Three minds. One synthesis.*
@@ -40,6 +44,9 @@ codex login
 > Get your key from [AI Studio](https://aistudio.google.com/app/apikey).
 
 ## Installation
+
+New installs should use [skill-counsel](https://github.com/cbzehner/skill-counsel)
+instead. The instructions below remain for historical reference.
 
 ### From Marketplace
 

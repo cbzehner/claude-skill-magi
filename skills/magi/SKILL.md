@@ -67,14 +67,16 @@ Excerpt relevant sections, not whole files. Never include secrets/credentials. B
 
 **Prompt safety:** Never interpolate prompts into shell strings. Always use single-quoted heredocs (`<<'PROMPT'`) to prevent shell expansion.
 
-**Gemini transport:** Always use [gemini-query.sh](gemini-query.sh) instead of calling `gemini` directly (centralizes model selection, prevents model-name drift in long contexts):
+**Gemini transport:** Call Gemini directly. Keep the model explicit in the command so the invocation is self-contained:
 
 ```bash
-bash gemini-query.sh "$(cat <<'PROMPT'
+gemini -p "$(cat <<'PROMPT'
 [advisor prompt with any characters safely]
 PROMPT
-)"
+)" --model gemini-3.1-pro-preview --sandbox -o json
 ```
+
+If Gemini reports a missing API key, check `~/.gemini/.env` first. Non-interactive `gemini -p` expects `GEMINI_API_KEY` there; do not print or persist the key in session notes.
 
 **Codex transport:** Always use [codex-adapter.sh](codex-adapter.sh) instead of `codex exec` directly (prevents stdin pipe hangs in subagent environments).
 
@@ -175,7 +177,7 @@ Always use `## Synthesis`, `## Claude`, `## Gemini`, `## Codex` headers (grep an
 - 3/3 → full synthesis
 - 2/3 → partial synthesis, note who's missing and why
 - 1/3 (host-only) → only if failures are capacity/network; state it's single-advisor
-- Permission blocked → **STOP**. Show setup message: add `"Bash(bash gemini-query.sh *)"` and `"Bash(codex *)"` to `.claude/settings.local.json` permissions.allow. (Codex hosts: show sandbox/approval guidance instead.)
+- Permission blocked → **STOP**. Show setup message: add `"Bash(gemini *)"` and `"Bash(bash codex-adapter.sh *)"` to `.claude/settings.local.json` permissions.allow. (Codex hosts: show sandbox/approval guidance instead.)
 
 ## Usage Examples
 
